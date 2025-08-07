@@ -1,137 +1,360 @@
 package id
 
 import (
+	"crypto/rand"
 	"errors"
-	"log"
-	"math/rand/v2"
+	"fmt"
+	"io"
+	mathrand "math/rand"
+	"sort"
+	"strings"
+	"sync"
 	"time"
+
+	"github.com/oklog/ulid"
 )
 
-// KeyGenerator ensures valid keys for records
-type KeyGenerator interface {
-	// Validate ensures that the provided key
-	// is comprised of a valid date and random
-	// random number so that it is globally unique
-	IsKeyValid(string) (string, bool)
+var (
+	entropyMu sync.Mutex
+	entropy   = ulid.Monotonic(mathrand.New(mathrand.NewSource(time.Now().UnixNano())), 0)
+)
 
-	// Generate provides a new globally unique
-	// URL safe key for a record
-	Generate() (string, error)
+// Generator provides comprehensive ULID generation and manipulation capabilities
+type Generator interface {
+	// Basic Generation
+	Generate() string
+	GenerateWithTime(t time.Time) string
+	GenerateBatch(count int) []string
+	GenerateRange(start, end time.Time, count int) []string
+
+	// Validation
+	IsKeyValid(string) bool
+	ValidateAndNormalize(id string) (string, error)
+
+	// Timestamp Operations
+	ExtractTimestamp(id string) (time.Time, error)
+	Age(id string) (time.Duration, error)
+	IsExpired(id string, maxAge time.Duration) (bool, error)
+
+	// Comparison Operations
+	Compare(id1, id2 string) (int, error)
+	IsBefore(id1, id2 string) (bool, error)
+	IsAfter(id1, id2 string) (bool, error)
+
+	// Format Conversions
+	ToBytes(id string) ([16]byte, error)
+	FromBytes(data [16]byte) string
+	ToUUID(id string) (string, error)
 }
 
-// Key is a unique identifier
-// for a record. The Time and Num create
-// the id's uniqueness. The random number is
-// is needed because records will be created
-// quickly enough that they will have the same
-// timestamp. The key is a single string value
-// which represents the Time and Num in a url
-// safe way for external use.
-type Key struct {
-	// Time is the created time using Unix time
-	Time uint64
-	// Num is a random number generated from the Time
-	Num uint64
-	// Value is a URL safe string which
-	// represents the Time and Num
-	Value string
+// generator ensures valid keys for records
+type generator struct {
+	entropySource io.Reader
 }
 
-// keyCoder creates a unique string id
-// from an array of numbers. It's good
-// for link shortening, fast & URL-safe
-// ID generation and decoding back into
-// numbers for quicker database lookups.
-type keyCoder interface {
-	// Decode parses out a list of numbers
-	// from a Key
-	Decode(string) []uint64
-	// Encode creates a Key from an array
-	// of numbers
-	Encode([]uint64) (string, error)
-}
-
-// KeyGen creates and validates keys
-// to be used as globally unique, URL
-// safe identifiers
-type KeyGen struct {
-	maker keyCoder
-}
-
-// NewKeyGen creates an id generator
-func NewKeyGen(maker keyCoder) KeyGen {
-	return KeyGen{
-		maker: maker,
+// NewGenerator creates a new generator with default entropy
+func NewGenerator() *generator {
+	return &generator{
+		entropySource: entropy,
 	}
 }
 
-func (g KeyGen) IsKeyValid(val string) (string, bool) {
-	if val == "" {
-		return "", false
+// NewGeneratorWithEntropy creates a generator with custom entropy source
+func NewGeneratorWithEntropy(entropySource io.Reader) *generator {
+	return &generator{
+		entropySource: entropySource,
+	}
+}
+
+// NewSecureGenerator creates a generator using crypto/rand for high-security scenarios
+func NewSecureGenerator() *generator {
+	return &generator{
+		entropySource: rand.Reader,
+	}
+}
+
+// Basic Generation Methods
+
+// Generate provides a new globally unique URL safe key for a record
+func (g *generator) Generate() string {
+	return g.GenerateWithTime(time.Now())
+}
+
+// GenerateWithTime generates a ULID with a specific timestamp
+func (g *generator) GenerateWithTime(t time.Time) string {
+	entropyMu.Lock()
+	defer entropyMu.Unlock()
+	id := ulid.MustNew(ulid.Timestamp(t), g.entropySource)
+	return id.String()
+}
+
+// GenerateBatch creates multiple ULIDs efficiently
+func (g *generator) GenerateBatch(count int) []string {
+	if count <= 0 {
+		return []string{}
 	}
 
-	key, err := g.parseKey(val)
+	result := make([]string, count)
+	entropyMu.Lock()
+	defer entropyMu.Unlock()
+
+	for i := 0; i < count; i++ {
+		id := ulid.MustNew(ulid.Timestamp(time.Now()), g.entropySource)
+		result[i] = id.String()
+	}
+	return result
+}
+
+// GenerateRange creates ULIDs within a time range
+func (g *generator) GenerateRange(start, end time.Time, count int) []string {
+	if count <= 0 || end.Before(start) {
+		return []string{}
+	}
+
+	result := make([]string, count)
+	duration := end.Sub(start)
+	entropyMu.Lock()
+	defer entropyMu.Unlock()
+
+	for i := 0; i < count; i++ {
+		// Distribute timestamps evenly across the range
+		offset := time.Duration(int64(duration) * int64(i) / int64(count))
+		timestamp := start.Add(offset)
+		id := ulid.MustNew(ulid.Timestamp(timestamp), g.entropySource)
+		result[i] = id.String()
+	}
+	return result
+}
+
+// Validation Methods
+
+// IsKeyValid validates that the provided key is a valid ULID
+func (g *generator) IsKeyValid(s string) bool {
+	_, err := ulid.Parse(s)
+	return err == nil
+}
+
+// ValidateAndNormalize checks and normalizes a ULID string
+func (g *generator) ValidateAndNormalize(id string) (string, error) {
+	if id == "" {
+		return "", errors.New("empty ULID string")
+	}
+
+	// Normalize case (ULIDs should be uppercase)
+	normalized := strings.ToUpper(id)
+
+	// Validate the normalized ULID
+	parsed, err := ulid.Parse(normalized)
 	if err != nil {
-		log.Printf("[WARN] Error parsing key: %v", err)
-		return "", false
+		return "", fmt.Errorf("invalid ULID: %w", err)
 	}
 
-	if !isValidUnixDate(key.Time) || key.Num == 0 {
-		return "", false
-	}
-
-	return key.Value, true
+	return parsed.String(), nil
 }
 
-// NewId creates an identifier for a record
-func (g KeyGen) Generate() (string, error) {
-	now := uint64(time.Now().UnixNano())
+// Timestamp Operations
 
-	// Having a random id along with the time stamp
-	// helps ensure that two records recorded at
-	// the same nanosecond can still have a unique
-	// composite key
-	randomId := rand.Uint64()
-	source := rand.NewPCG(now, randomId)
-	r := rand.New(source)
+// ExtractTimestamp returns the timestamp component of a ULID
+func (g *generator) ExtractTimestamp(id string) (time.Time, error) {
+	parsed, err := ulid.Parse(id)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("invalid ULID: %w", err)
+	}
 
-	// create a key from the time and random id
-	key, err := g.maker.Encode([]uint64{now, r.Uint64()})
+	timestamp := parsed.Time()
+	return time.Unix(0, int64(timestamp)*int64(time.Millisecond)), nil
+}
+
+// Age returns how old a ULID is
+func (g *generator) Age(id string) (time.Duration, error) {
+	timestamp, err := g.ExtractTimestamp(id)
+	if err != nil {
+		return 0, err
+	}
+
+	return time.Since(timestamp), nil
+}
+
+// IsExpired checks if ULID is older than maxAge
+func (g *generator) IsExpired(id string, maxAge time.Duration) (bool, error) {
+	age, err := g.Age(id)
+	if err != nil {
+		return false, err
+	}
+
+	return age > maxAge, nil
+}
+
+// Comparison Operations
+
+// Compare returns -1, 0, or 1 for chronological ordering
+func (g *generator) Compare(id1, id2 string) (int, error) {
+	ulid1, err := ulid.Parse(id1)
+	if err != nil {
+		return 0, fmt.Errorf("invalid first ULID: %w", err)
+	}
+
+	ulid2, err := ulid.Parse(id2)
+	if err != nil {
+		return 0, fmt.Errorf("invalid second ULID: %w", err)
+	}
+
+	return ulid1.Compare(ulid2), nil
+}
+
+// IsBefore checks if id1 was generated before id2
+func (g *generator) IsBefore(id1, id2 string) (bool, error) {
+	cmp, err := g.Compare(id1, id2)
+	if err != nil {
+		return false, err
+	}
+	return cmp < 0, nil
+}
+
+// IsAfter checks if id1 was generated after id2
+func (g *generator) IsAfter(id1, id2 string) (bool, error) {
+	cmp, err := g.Compare(id1, id2)
+	if err != nil {
+		return false, err
+	}
+	return cmp > 0, nil
+}
+
+// Format Conversions
+
+// ToBytes returns the binary representation of a ULID
+func (g *generator) ToBytes(id string) ([16]byte, error) {
+	parsed, err := ulid.Parse(id)
+	if err != nil {
+		return [16]byte{}, fmt.Errorf("invalid ULID: %w", err)
+	}
+
+	// Convert ULID to byte array
+	var result [16]byte
+	copy(result[:], parsed[:])
+	return result, nil
+}
+
+// FromBytes creates ULID string from binary representation
+func (g *generator) FromBytes(data [16]byte) string {
+	var u ulid.ULID
+	copy(u[:], data[:])
+	return u.String()
+}
+
+// ToUUID converts ULID to UUID format (for compatibility)
+func (g *generator) ToUUID(id string) (string, error) {
+	bytes, err := g.ToBytes(id)
 	if err != nil {
 		return "", err
 	}
 
-	return key, nil
+	// Format as UUID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x",
+		bytes[0:4], bytes[4:6], bytes[6:8], bytes[8:10], bytes[10:16]), nil
 }
 
-// ParseKey parses out the numbers uses to create the key
-func (g KeyGen) parseKey(key string) (Key, error) {
-	ids := g.maker.Decode(key)
-	if len(ids) != 2 {
-		return Key{}, errors.New("incorrect number of ids for key")
+// Utility Functions
+
+// Stats provides statistics about a collection of ULIDs
+type Stats struct {
+	Count     int
+	TimeSpan  time.Duration
+	FirstID   string
+	LastID    string
+	FirstTime time.Time
+	LastTime  time.Time
+}
+
+// AnalyzeIDs provides generation statistics for a slice of ULIDs
+func AnalyzeIDs(ids []string) (Stats, error) {
+	if len(ids) == 0 {
+		return Stats{}, nil
 	}
 
-	return Key{
-		Time:  ids[0],
-		Num:   ids[1],
-		Value: key,
+	// Create a temporary generator for parsing
+	g := NewGenerator()
+
+	// Parse all timestamps
+	timestamps := make([]time.Time, 0, len(ids))
+	validIDs := make([]string, 0, len(ids))
+
+	for _, id := range ids {
+		if timestamp, err := g.ExtractTimestamp(id); err == nil {
+			timestamps = append(timestamps, timestamp)
+			validIDs = append(validIDs, id)
+		}
+	}
+
+	if len(validIDs) == 0 {
+		return Stats{}, errors.New("no valid ULIDs found")
+	}
+
+	// Sort by timestamp to find first and last
+	sort.Slice(validIDs, func(i, j int) bool {
+		return timestamps[i].Before(timestamps[j])
+	})
+
+	firstTime := timestamps[0]
+	lastTime := timestamps[len(timestamps)-1]
+
+	return Stats{
+		Count:     len(validIDs),
+		TimeSpan:  lastTime.Sub(firstTime),
+		FirstID:   validIDs[0],
+		LastID:    validIDs[len(validIDs)-1],
+		FirstTime: firstTime,
+		LastTime:  lastTime,
 	}, nil
 }
 
-// isValidUnixDate checks if a uint64 value is a valid Unix timestamp.
-func isValidUnixDate(timestamp uint64) bool {
-	// Define the minimum and maximum valid Unix timestamps in nanoseconds.
-	const (
-		minUnixNano uint64 = 0                          // Unix epoch start in nanoseconds
-		maxUnixNano uint64 = 7258118400 * 1_000_000_000 // Year 2200 in nanoseconds
-	)
+// FilterByTimeRange filters ULIDs within time bounds
+func FilterByTimeRange(ids []string, start, end time.Time) []string {
+	g := NewGenerator()
+	result := make([]string, 0, len(ids))
 
-	// Check if the timestamp is within the valid range.
-	if timestamp < minUnixNano || timestamp > maxUnixNano {
-		return false
+	for _, id := range ids {
+		if timestamp, err := g.ExtractTimestamp(id); err == nil {
+			if (timestamp.Equal(start) || timestamp.After(start)) &&
+				(timestamp.Equal(end) || timestamp.Before(end)) {
+				result = append(result, id)
+			}
+		}
 	}
 
-	// Validate by converting to a time.Time object.
-	_, err := time.Unix(0, int64(timestamp)).MarshalText()
-	return err == nil
+	return result
+}
+
+// SortChronologically sorts ULIDs by their timestamp component
+func SortChronologically(ids []string) []string {
+	if len(ids) <= 1 {
+		return ids
+	}
+
+	g := NewGenerator()
+	result := make([]string, len(ids))
+	copy(result, ids)
+
+	sort.Slice(result, func(i, j int) bool {
+		cmp, err := g.Compare(result[i], result[j])
+		if err != nil {
+			return false // Keep original order if comparison fails
+		}
+		return cmp < 0
+	})
+
+	return result
+}
+
+// SortChronologicallyReverse sorts ULIDs by timestamp in reverse order (newest first)
+func SortChronologicallyReverse(ids []string) []string {
+	sorted := SortChronologically(ids)
+
+	// Reverse the slice
+	for i := 0; i < len(sorted)/2; i++ {
+		j := len(sorted) - 1 - i
+		sorted[i], sorted[j] = sorted[j], sorted[i]
+	}
+
+	return sorted
 }
