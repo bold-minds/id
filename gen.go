@@ -16,18 +16,19 @@ import (
 
 var (
 	entropyMu sync.Mutex
-	entropy   = ulid.Monotonic(mathrand.New(mathrand.NewSource(time.Now().UnixNano())), 0)
+	// Default entropy uses math/rand for performance. Use NewSecureGenerator() for crypto-secure randomness.
+	entropy = ulid.Monotonic(mathrand.New(mathrand.NewSource(time.Now().UnixNano())), 0) //nolint:gosec // G404: Intentional use of math/rand for performance; crypto/rand available via NewSecureGenerator()
 )
 
-// Core key generation
-type KeyGenerator interface {
+// Core id generation
+type Generator interface {
 	Generate() string
-	IsKeyValid(string) bool
+	IsIdValid(string) bool
 }
 
-// Key generation for batch operations
-type BatchGenerator interface {
-	KeyGenerator
+// Id generation for batch operations
+type Batcher interface {
+	Generator
 	GenerateWithTime(t time.Time) string
 	GenerateBatch(count int) []string
 	GenerateRange(start, end time.Time, count int) []string
@@ -35,12 +36,12 @@ type BatchGenerator interface {
 
 // Validation and normalization
 type Validator interface {
-	IsKeyValid(string) bool
+	IsIdValid(string) bool
 	ValidateAndNormalize(id string) (string, error)
 }
 
 // Time-based operations
-type TimestampExtractor interface {
+type Timestamper interface {
 	ExtractTimestamp(id string) (time.Time, error)
 	Age(id string) (time.Duration, error)
 	IsExpired(id string, maxAge time.Duration) (bool, error)
@@ -61,16 +62,16 @@ type Converter interface {
 }
 
 // Composite interface with everything
-type Generator interface {
-	KeyGenerator
-	BatchGenerator
+type Provider interface {
+	Generator
+	Batcher
 	Validator
-	TimestampExtractor
+	Timestamper
 	Comparator
 	Converter
 }
 
-// generator ensures valid keys for records
+// generator ensures valid ids for records
 type generator struct {
 	entropySource io.Reader
 }
@@ -98,7 +99,7 @@ func NewSecureGenerator() *generator {
 
 // Basic Generation Methods
 
-// Generate provides a new globally unique URL safe key for a record
+// Generate provides a new globally unique URL safe id for a record
 func (g *generator) Generate() string {
 	return g.GenerateWithTime(time.Now())
 }
@@ -151,8 +152,8 @@ func (g *generator) GenerateRange(start, end time.Time, count int) []string {
 
 // Validation Methods
 
-// IsKeyValid validates that the provided key is a valid ULID
-func (g *generator) IsKeyValid(s string) bool {
+// IsIdValid validates that the provided id is a valid ULID
+func (g *generator) IsIdValid(s string) bool {
 	_, err := ulid.Parse(s)
 	return err == nil
 }
@@ -185,7 +186,8 @@ func (g *generator) ExtractTimestamp(id string) (time.Time, error) {
 	}
 
 	timestamp := parsed.Time()
-	return time.Unix(0, int64(timestamp)*int64(time.Millisecond)), nil
+	// ULID timestamp is milliseconds since Unix epoch
+	return time.Unix(int64(timestamp)/1000, (int64(timestamp)%1000)*int64(time.Millisecond)), nil
 }
 
 // Age returns how old a ULID is

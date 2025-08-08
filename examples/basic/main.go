@@ -54,8 +54,8 @@ func main() {
 	fmt.Println("\n=== Validation & Normalization ===")
 
 	// Validate ULIDs
-	fmt.Printf("Valid ULID: %t\n", gen.IsKeyValid(ulid))
-	fmt.Printf("Invalid ULID: %t\n", gen.IsKeyValid("invalid"))
+	fmt.Printf("Valid ULID: %t\n", gen.IsIdValid(ulid))
+	fmt.Printf("Invalid ULID: %t\n", gen.IsIdValid("invalid"))
 
 	// Normalize case
 	lowercase := "01k23cg6gn6xgjwz1bd7wh3zg5"

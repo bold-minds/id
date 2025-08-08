@@ -1,0 +1,7 @@
+{
+    "cSpell.words": [
+        "Timestamper"
+    ],
+    "go.lintTool": "golangci-lint",
+    "go.lintOnSave": "package"
+}

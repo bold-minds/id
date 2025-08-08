@@ -69,7 +69,7 @@ ULIDs have the following security-relevant properties:
 ### Best Practices
 
 1. **Use Secure Generation**: For sensitive applications, use `NewSecureGenerator()`
-2. **Validate Input**: Always validate ULIDs from external sources using `IsKeyValid()`
+2. **Validate Input**: Always validate ULIDs from external sources using `IsIdValid()`
 3. **Handle Errors**: Properly handle all error returns from library functions
 4. **Avoid Timing Attacks**: Be aware that timestamp extraction reveals creation time
 5. **Rate Limiting**: Consider rate limiting ULID generation in public APIs

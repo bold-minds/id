@@ -34,13 +34,13 @@ func BenchmarkGenerateBatch(b *testing.B) {
 	}
 }
 
-func BenchmarkIsKeyValid(b *testing.B) {
+func BenchmarkIsIdValid(b *testing.B) {
 	gen := id.NewGenerator()
 	ulid := gen.Generate()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		_ = gen.IsKeyValid(ulid)
+		_ = gen.IsIdValid(ulid)
 	}
 }
 

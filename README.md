@@ -90,7 +90,7 @@ customGen := id.NewGeneratorWithEntropy(myEntropyReader)
 
 ```go
 // Basic validation
-valid := gen.IsKeyValid("01K23CG6GN6XGJWZ1BD7WH3ZG5")
+valid := gen.IsIdValid("01K23CG6GN6XGJWZ1BD7WH3ZG5")
 
 // Validate and normalize case
 normalized, err := gen.ValidateAndNormalize("01k23cg6gn6xgjwz1bd7wh3zg5")
@@ -189,7 +189,7 @@ type Generator interface {
     GenerateRange(start, end time.Time, count int) []string
 
     // Validation
-    IsKeyValid(string) bool
+    IsIdValid(string) bool
     ValidateAndNormalize(id string) (string, error)
 
     // Timestamp Operations
