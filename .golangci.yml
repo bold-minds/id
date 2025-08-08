@@ -53,6 +53,7 @@ linters-settings:
           - "$gostd"                    # Go standard library
           - "github.com/oklog/ulid"     # ULID generation library
           - "github.com/stretchr/testify" # Testing framework
+          - "github.com/bold-minds/id"  # Own package (for examples)
 
   errcheck:
     # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
