@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2025-01-08
+
+### Changed
+- Refactored API into focused, composable interfaces for better maintainability:
+  - `KeyGenerator` - Core generation and validation
+  - `BatchGenerator` - Batch and time-based generation (embeds `KeyGenerator`)
+  - `Validator` - Validation and normalization
+  - `TimestampExtractor` - Time-based operations
+  - `Comparator` - Comparison operations
+  - `Converter` - Format conversions
+- Maintained backward compatibility through composite `Generator` interface
+
 ## [1.0.0] - 2025-08-07
 
 ### Added
