@@ -19,32 +19,55 @@ var (
 	entropy   = ulid.Monotonic(mathrand.New(mathrand.NewSource(time.Now().UnixNano())), 0)
 )
 
-// Generator provides comprehensive ULID generation and manipulation capabilities
-type Generator interface {
-	// Basic Generation
+// Core key generation
+type KeyGenerator interface {
 	Generate() string
+	IsKeyValid(string) bool
+}
+
+// Key generation for batch operations
+type BatchGenerator interface {
+	KeyGenerator
 	GenerateWithTime(t time.Time) string
 	GenerateBatch(count int) []string
 	GenerateRange(start, end time.Time, count int) []string
+}
 
-	// Validation
+// Validation and normalization
+type Validator interface {
 	IsKeyValid(string) bool
 	ValidateAndNormalize(id string) (string, error)
+}
 
-	// Timestamp Operations
+// Time-based operations
+type TimestampExtractor interface {
 	ExtractTimestamp(id string) (time.Time, error)
 	Age(id string) (time.Duration, error)
 	IsExpired(id string, maxAge time.Duration) (bool, error)
+}
 
-	// Comparison Operations
+// Comparison operations
+type Comparator interface {
 	Compare(id1, id2 string) (int, error)
 	IsBefore(id1, id2 string) (bool, error)
 	IsAfter(id1, id2 string) (bool, error)
+}
 
-	// Format Conversions
+// Format conversions
+type Converter interface {
 	ToBytes(id string) ([16]byte, error)
 	FromBytes(data [16]byte) string
 	ToUUID(id string) (string, error)
+}
+
+// Composite interface with everything
+type Generator interface {
+	KeyGenerator
+	BatchGenerator
+	Validator
+	TimestampExtractor
+	Comparator
+	Converter
 }
 
 // generator ensures valid keys for records
