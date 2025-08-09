@@ -6,7 +6,7 @@
 [![Last Updated](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/last-updated.json)](https://github.com/bold-minds/id/commits)
 [![golangci-lint](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/golangci-lint.json)](https://github.com/bold-minds/id/actions/workflows/test.yaml)
 [![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/coverage.json)](https://github.com/bold-minds/id/actions/workflows/test.yaml)
-[![Dependabot](https://img.shields.io/badge/dependabot-enabled-brightgreen?logo=dependabot)](https://github.com/bold-minds/id/blob/main/.github/dependabot.yml)
+[![Dependabot](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/dependabot.json)](https://github.com/bold-minds/id/security/dependabot)
 
 A comprehensive, high-performance ULID (Universally Unique Lexicographically Sortable Identifier) library for Go that extends beyond basic generation with advanced features for production applications.
 

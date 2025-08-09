@@ -434,13 +434,31 @@ generate_badges() {
     print_info "🐹 Go version badge: $go_version (Go blue)"
     
     # Generate last updated badge (shows when validation last ran)
-    local last_updated
     LAST_COMMIT_DATE=$(git log -1 --format=%cd --date=short)
     echo '{"schemaVersion":1,"label":"last updated","message":"'$LAST_COMMIT_DATE'","color":"teal"}' > .github/badges/last-updated.json
-    print_info "📅 Last updated badge: $LAST_COMMIT_DATE (teal)"
+    
+    # Dynamic Dependabot badge (Option 3: Combined Status)
+    if command -v gh >/dev/null 2>&1; then
+        ALERTS=$(gh api repos/bold-minds/id/dependabot/alerts --jq 'length' 2>/dev/null || echo "0")
+        OPEN_PRS=$(gh pr list --author "app/dependabot" --state open --json number --jq 'length' 2>/dev/null || echo "0")
+        
+        if [[ $ALERTS -gt 0 ]]; then
+            echo '{"schemaVersion":1,"label":"security","message":"'$ALERTS' alerts","color":"red"}' > .github/badges/dependabot.json
+            print_info "🔴 Dependabot badge: $ALERTS security alerts (red)"
+        elif [[ $OPEN_PRS -gt 0 ]]; then
+            echo '{"schemaVersion":1,"label":"dependabot","message":"'$OPEN_PRS' updates","color":"blue"}' > .github/badges/dependabot.json
+            print_info "🔵 Dependabot badge: $OPEN_PRS pending updates (blue)"
+        else
+            echo '{"schemaVersion":1,"label":"dependabot","message":"up to date","color":"brightgreen"}' > .github/badges/dependabot.json
+            print_info "🟢 Dependabot badge: up to date (green)"
+        fi
+    else
+        echo '{"schemaVersion":1,"label":"dependabot","message":"gh required","color":"yellow"}' > .github/badges/dependabot.json
+        print_info "⚠️  Dependabot badge: GitHub CLI required for dynamic status"
+    fi
     
     print_info "Badge JSON files generated in ./.github/badges/ directory 🏷️"
-    print_info "Files created: golangci-lint.json, coverage.json, go-version.json, last-updated.json, lint-results.json"
+    print_info "Files created: golangci-lint.json, coverage.json, go-version.json, last-updated.json, dependabot.json, lint-results.json"
     
     return 0
 }
