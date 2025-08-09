@@ -95,10 +95,19 @@ jobs:
           fi
           
           # Generate comprehensive security badge (Dependabot + Code Scanning)
+          echo "🔍 Checking security alerts..."
           DEPENDABOT_ALERTS=$(gh api repos/bold-minds/id/dependabot/alerts --jq 'length' 2>/dev/null || echo "0")
+          echo "Dependabot alerts: $DEPENDABOT_ALERTS"
+          
+          # Debug code scanning API access
+          echo "🔍 Checking code scanning alerts..."
+          gh api repos/bold-minds/id/code-scanning/alerts 2>&1 | head -5 || echo "Code scanning API failed"
           CODE_SCANNING_ALERTS=$(gh api repos/bold-minds/id/code-scanning/alerts --jq '[.[] | select(.state == "open")] | length' 2>/dev/null || echo "0")
+          echo "Code scanning alerts: $CODE_SCANNING_ALERTS"
+          
           TOTAL_ALERTS=$((DEPENDABOT_ALERTS + CODE_SCANNING_ALERTS))
           OPEN_PRS=$(gh pr list --author "app/dependabot" --state open --json number --jq 'length' 2>/dev/null || echo "0")
+          echo "Total alerts: $TOTAL_ALERTS, Open PRs: $OPEN_PRS"
           
           if [[ $TOTAL_ALERTS -gt 0 ]]; then
             if [[ $DEPENDABOT_ALERTS -gt 0 && $CODE_SCANNING_ALERTS -gt 0 ]]; then
