@@ -93,9 +93,28 @@ jobs:
           
       - name: Deploy badges to GitHub Pages
         if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: .github/badges
-          destination_dir: badges
-          keep_files: false
+        run: |
+          # Create gh-pages branch if it doesn't exist
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Clone the repository to a temporary directory
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/bold-minds/id.git temp-pages
+          cd temp-pages
+          
+          # Create or switch to gh-pages branch
+          git checkout gh-pages 2>/dev/null || git checkout --orphan gh-pages
+          
+          # Clear existing content and copy badge files
+          rm -rf badges
+          mkdir -p badges
+          cp ../.github/badges/* badges/
+          
+          # Commit and push
+          git add badges/
+          git commit -m "Update badges from CI run ${{ github.run_number }}" || exit 0
+          git push origin gh-pages
+          
+          # Cleanup
+          cd ..
+          rm -rf temp-pages
