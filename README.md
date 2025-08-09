@@ -1,7 +1,7 @@
 # Advanced ULID Library for Go
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/bold-minds/id.svg)](https://pkg.go.dev/github.com/bold-minds/id)
-[![Go Report Card](https://goreportcard.com/badge/github.com/bold-minds/id)](https://goreportcard.com/report/github.com/bold-minds/id)
+[![Go Report Card](https://goreportcard.com/badge/github.com/bold-minds/id)](https://goreportcard.com/badge/github.com/bold-minds/id)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/bold-minds/id/workflows/tests/badge.svg)](https://github.com/bold-minds/id/actions)
 
