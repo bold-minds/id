@@ -94,16 +94,24 @@ jobs:
             fi
           fi
           
-          # Generate dynamic Dependabot badge (Option 3: Combined Status)
-          ALERTS=$(gh api repos/bold-minds/id/dependabot/alerts --jq 'length' 2>/dev/null || echo "0")
+          # Generate comprehensive security badge (Dependabot + Code Scanning)
+          DEPENDABOT_ALERTS=$(gh api repos/bold-minds/id/dependabot/alerts --jq 'length' 2>/dev/null || echo "0")
+          CODE_SCANNING_ALERTS=$(gh api repos/bold-minds/id/code-scanning/alerts --jq '[.[] | select(.state == "open")] | length' 2>/dev/null || echo "0")
+          TOTAL_ALERTS=$((DEPENDABOT_ALERTS + CODE_SCANNING_ALERTS))
           OPEN_PRS=$(gh pr list --author "app/dependabot" --state open --json number --jq 'length' 2>/dev/null || echo "0")
           
-          if [[ $ALERTS -gt 0 ]]; then
-            echo '{"schemaVersion":1,"label":"security","message":"'$ALERTS' alerts","color":"red"}' > .github/badges/dependabot.json
+          if [[ $TOTAL_ALERTS -gt 0 ]]; then
+            if [[ $DEPENDABOT_ALERTS -gt 0 && $CODE_SCANNING_ALERTS -gt 0 ]]; then
+              echo '{"schemaVersion":1,"label":"security","message":"'$TOTAL_ALERTS' alerts","color":"red"}' > .github/badges/dependabot.json
+            elif [[ $DEPENDABOT_ALERTS -gt 0 ]]; then
+              echo '{"schemaVersion":1,"label":"security","message":"'$DEPENDABOT_ALERTS' dependency alerts","color":"red"}' > .github/badges/dependabot.json
+            else
+              echo '{"schemaVersion":1,"label":"security","message":"'$CODE_SCANNING_ALERTS' code alerts","color":"red"}' > .github/badges/dependabot.json
+            fi
           elif [[ $OPEN_PRS -gt 0 ]]; then
             echo '{"schemaVersion":1,"label":"dependabot","message":"'$OPEN_PRS' updates","color":"blue"}' > .github/badges/dependabot.json
           else
-            echo '{"schemaVersion":1,"label":"dependabot","message":"up to date","color":"brightgreen"}' > .github/badges/dependabot.json
+            echo '{"schemaVersion":1,"label":"security","message":"all clear","color":"brightgreen"}' > .github/badges/dependabot.json
           fi
           
       - name: Commit badges to main branch

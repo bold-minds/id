@@ -437,24 +437,34 @@ generate_badges() {
     LAST_COMMIT_DATE=$(git log -1 --format=%cd --date=short)
     echo '{"schemaVersion":1,"label":"last updated","message":"'$LAST_COMMIT_DATE'","color":"teal"}' > .github/badges/last-updated.json
     
-    # Dynamic Dependabot badge (Option 3: Combined Status)
+    # Comprehensive security badge (Dependabot + Code Scanning)
     if command -v gh >/dev/null 2>&1; then
-        ALERTS=$(gh api repos/bold-minds/id/dependabot/alerts --jq 'length' 2>/dev/null || echo "0")
+        DEPENDABOT_ALERTS=$(gh api repos/bold-minds/id/dependabot/alerts --jq 'length' 2>/dev/null || echo "0")
+        CODE_SCANNING_ALERTS=$(gh api repos/bold-minds/id/code-scanning/alerts --jq '[.[] | select(.state == "open")] | length' 2>/dev/null || echo "0")
+        TOTAL_ALERTS=$((DEPENDABOT_ALERTS + CODE_SCANNING_ALERTS))
         OPEN_PRS=$(gh pr list --author "app/dependabot" --state open --json number --jq 'length' 2>/dev/null || echo "0")
         
-        if [[ $ALERTS -gt 0 ]]; then
-            echo '{"schemaVersion":1,"label":"security","message":"'$ALERTS' alerts","color":"red"}' > .github/badges/dependabot.json
-            print_info "🔴 Dependabot badge: $ALERTS security alerts (red)"
+        if [[ $TOTAL_ALERTS -gt 0 ]]; then
+            if [[ $DEPENDABOT_ALERTS -gt 0 && $CODE_SCANNING_ALERTS -gt 0 ]]; then
+                echo '{"schemaVersion":1,"label":"security","message":"'$TOTAL_ALERTS' alerts","color":"red"}' > .github/badges/dependabot.json
+                print_info "🔴 Security badge: $TOTAL_ALERTS total alerts ($DEPENDABOT_ALERTS dependency + $CODE_SCANNING_ALERTS code scanning)"
+            elif [[ $DEPENDABOT_ALERTS -gt 0 ]]; then
+                echo '{"schemaVersion":1,"label":"security","message":"'$DEPENDABOT_ALERTS' dependency alerts","color":"red"}' > .github/badges/dependabot.json
+                print_info "🔴 Security badge: $DEPENDABOT_ALERTS dependency alerts (red)"
+            else
+                echo '{"schemaVersion":1,"label":"security","message":"'$CODE_SCANNING_ALERTS' code alerts","color":"red"}' > .github/badges/dependabot.json
+                print_info "🔴 Security badge: $CODE_SCANNING_ALERTS code scanning alerts (red)"
+            fi
         elif [[ $OPEN_PRS -gt 0 ]]; then
             echo '{"schemaVersion":1,"label":"dependabot","message":"'$OPEN_PRS' updates","color":"blue"}' > .github/badges/dependabot.json
-            print_info "🔵 Dependabot badge: $OPEN_PRS pending updates (blue)"
+            print_info "🔵 Security badge: $OPEN_PRS pending updates (blue)"
         else
-            echo '{"schemaVersion":1,"label":"dependabot","message":"up to date","color":"brightgreen"}' > .github/badges/dependabot.json
-            print_info "🟢 Dependabot badge: up to date (green)"
+            echo '{"schemaVersion":1,"label":"security","message":"all clear","color":"brightgreen"}' > .github/badges/dependabot.json
+            print_info "🟢 Security badge: all clear (green)"
         fi
     else
-        echo '{"schemaVersion":1,"label":"dependabot","message":"gh required","color":"yellow"}' > .github/badges/dependabot.json
-        print_info "⚠️  Dependabot badge: GitHub CLI required for dynamic status"
+        echo '{"schemaVersion":1,"label":"security","message":"gh required","color":"yellow"}' > .github/badges/dependabot.json
+        print_info "⚠️  Security badge: GitHub CLI required for dynamic status"
     fi
     
     print_info "Badge JSON files generated in ./.github/badges/ directory 🏷️"
