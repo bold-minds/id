@@ -435,9 +435,9 @@ generate_badges() {
     
     # Generate last updated badge (shows when validation last ran)
     local last_updated
-    last_updated=$(date -u +"%Y-%m-%d")
-    echo '{"schemaVersion":1,"label":"last updated","message":"'$last_updated'","color":"blue"}' > .github/badges/last-updated.json
-    print_info "📅 Last updated badge: $last_updated (blue)"
+    LAST_COMMIT_DATE=$(git log -1 --format=%cd --date=short)
+    echo '{"schemaVersion":1,"label":"last updated","message":"'$LAST_COMMIT_DATE'","color":"teal"}' > .github/badges/last-updated.json
+    print_info "📅 Last updated badge: $LAST_COMMIT_DATE (teal)"
     
     print_info "Badge JSON files generated in ./.github/badges/ directory 🏷️"
     print_info "Files created: golangci-lint.json, coverage.json, go-version.json, last-updated.json, lint-results.json"

@@ -52,8 +52,8 @@ jobs:
         run: |
           mkdir -p .github/badges
           
-          # Install golangci-lint for badge generation
-          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.3.1
+          # Install golangci-lint v2 directly (due to third-party action restrictions)
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
           
           # Generate coverage badge from existing coverage.out
           if [[ -f "coverage.out" ]]; then
@@ -77,18 +77,21 @@ jobs:
           GO_VERSION=$(go version | grep -oE 'go[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
           echo '{"schemaVersion":1,"label":"Go","message":"'$GO_VERSION'","color":"00ADD8"}' > .github/badges/go-version.json
           
-          # Generate last updated badge (shows when CI last ran)
-          LAST_UPDATED=$(date -u +"%Y-%m-%d")
-          echo '{"schemaVersion":1,"label":"last updated","message":"'$LAST_UPDATED'","color":"blue"}' > .github/badges/last-updated.json
+          # Generate last updated badge
+          LAST_COMMIT_DATE=$(git log -1 --format=%cd --date=short)
+          echo '{"schemaVersion":1,"label":"last updated","message":"'$LAST_COMMIT_DATE'","color":"teal"}' > .github/badges/last-updated.json
           
-          # Generate golangci-lint badge (run separately to get JSON output)
-          golangci-lint run --out-format json > .github/badges/lint-results.json || true
-          ISSUES=$(jq '.Issues | length // 0' .github/badges/lint-results.json)
-          
-          if [ "$ISSUES" -eq 0 ]; then
+          # Generate golangci-lint badge (v2 doesn't support --out-format, use exit code)
+          if golangci-lint run; then
             echo '{"schemaVersion":1,"label":"golangci-lint","message":"0 issues","color":"brightgreen"}' > .github/badges/golangci-lint.json
           else
-            echo '{"schemaVersion":1,"label":"golangci-lint","message":"'$ISSUES' issues","color":"red"}' > .github/badges/golangci-lint.json
+            # Count issues by running again and capturing output
+            ISSUES=$(golangci-lint run 2>&1 | grep -c "^.*\.go:" || echo "0")
+            if [[ $ISSUES -eq 0 ]]; then
+              echo '{"schemaVersion":1,"label":"golangci-lint","message":"passing","color":"brightgreen"}' > .github/badges/golangci-lint.json
+            else
+              echo '{"schemaVersion":1,"label":"golangci-lint","message":"'$ISSUES' issues","color":"red"}' > .github/badges/golangci-lint.json
+            fi
           fi
           
       - name: Commit badges to main branch
