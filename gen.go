@@ -187,7 +187,15 @@ func (g *generator) ExtractTimestamp(id string) (time.Time, error) {
 
 	timestamp := parsed.Time()
 	// ULID timestamp is milliseconds since Unix epoch
-	return time.Unix(int64(timestamp)/1000, (int64(timestamp)%1000)*int64(time.Millisecond)), nil
+	// Safe conversion to avoid integer overflow (gosec G115)
+	timestampMs := timestamp
+	const maxInt64 = uint64(9223372036854775807) // math.MaxInt64 as uint64
+	if timestampMs > maxInt64 {
+		return time.Time{}, fmt.Errorf("timestamp too large: %d", timestampMs)
+	}
+	seconds := int64(timestampMs) / 1000
+	nanoseconds := (int64(timestampMs) % 1000) * int64(time.Millisecond)
+	return time.Unix(seconds, nanoseconds), nil
 }
 
 // Age returns how old a ULID is
