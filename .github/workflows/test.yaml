@@ -50,6 +50,57 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.out
+      
+      # Generate badge data from CI metrics (only from primary job)
+      - name: Generate badge data
+        if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
+        run: |
+          mkdir -p .github/badges
+          
+          # Generate coverage badge from existing coverage.out
+          if [[ -f "coverage.out" ]]; then
+            COVERAGE=$(go test -coverprofile=temp_coverage.out ./. 2>/dev/null | grep "coverage:" | grep -oE '[0-9]+\.[0-9]+%' | sed 's/%//' | head -1)
+            rm -f temp_coverage.out 2>/dev/null
+            
+            if [[ -z "$COVERAGE" ]]; then
+              COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+            fi
+            
+            if (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+              echo '{"schemaVersion":1,"label":"coverage","message":"'$COVERAGE'%","color":"brightgreen"}' > .github/badges/coverage.json
+            elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
+              echo '{"schemaVersion":1,"label":"coverage","message":"'$COVERAGE'%","color":"yellow"}' > .github/badges/coverage.json
+            else
+              echo '{"schemaVersion":1,"label":"coverage","message":"'$COVERAGE'%","color":"red"}' > .github/badges/coverage.json
+            fi
+          fi
+          
+          # Generate Go version badge
+          GO_VERSION=$(go version | grep -oE 'go[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)
+          echo '{"schemaVersion":1,"label":"Go","message":"'$GO_VERSION'","color":"00ADD8"}' > .github/badges/go-version.json
+          
+          # Generate last updated badge (shows when CI last ran)
+          LAST_UPDATED=$(date -u +"%Y-%m-%d")
+          echo '{"schemaVersion":1,"label":"last updated","message":"'$LAST_UPDATED'","color":"blue"}' > .github/badges/last-updated.json
+          
+          # Generate golangci-lint badge (run separately to get JSON output)
+          golangci-lint run --out-format json > .github/badges/lint-results.json || true
+          ISSUES=$(jq '.Issues | length // 0' .github/badges/lint-results.json)
+          
+          if [ "$ISSUES" -eq 0 ]; then
+            echo '{"schemaVersion":1,"label":"golangci-lint","message":"0 issues","color":"brightgreen"}' > .github/badges/golangci-lint.json
+          else
+            echo '{"schemaVersion":1,"label":"golangci-lint","message":"'$ISSUES' issues","color":"red"}' > .github/badges/golangci-lint.json
+          fi
+          
+      - name: Deploy badges to GitHub Pages
+        if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./.github/badges
+          destination_dir: badges
+          keep_files: true
 
   lint:
     runs-on: ubuntu-latest
