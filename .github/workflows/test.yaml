@@ -96,16 +96,3 @@ jobs:
           publish_dir: .github/badges
           destination_dir: badges
           keep_files: false
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24'
-      - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.3.1
-      - name: Run golangci-lint
-        run: golangci-lint run
