@@ -42,7 +42,7 @@ func main() {
     
     // Generate a ULID
     ulid := gen.Generate()
-    fmt.Println("Generated:", ulid) // 01K23CG6GN6XGJWZ1BD7WH3ZG5
+    fmt.Println("Generated:", ulid) // e.g., 01HQZX3T7K9W2B4N5F8G6P1M0S
     
     // Extract timestamp
     timestamp, _ := gen.ExtractTimestamp(ulid)
@@ -90,11 +90,11 @@ customGen := id.NewGeneratorWithEntropy(myEntropyReader)
 
 ```go
 // Basic validation
-valid := gen.IsIdValid("01K23CG6GN6XGJWZ1BD7WH3ZG5")
+valid := gen.IsIdValid("01ARZ3NDEKTSV4RRFFQ69G5FAV")
 
 // Validate and normalize case
-normalized, err := gen.ValidateAndNormalize("01k23cg6gn6xgjwz1bd7wh3zg5")
-// Returns: "01K23CG6GN6XGJWZ1BD7WH3ZG5", nil
+normalized, err := gen.ValidateAndNormalize("01arz3ndektsv4rrffq69g5fav")
+// Returns: "01ARZ3NDEKTSV4RRFFQ69G5FAV", nil
 ```
 
 ### Timestamp Operations

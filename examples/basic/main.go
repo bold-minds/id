@@ -58,7 +58,7 @@ func main() {
 	fmt.Printf("Invalid ULID: %t\n", gen.IsIdValid("invalid"))
 
 	// Normalize case
-	lowercase := "01k23cg6gn6xgjwz1bd7wh3zg5"
+	lowercase := "01arz3ndektsv4rrffq69g5fav"
 	normalized, err := gen.ValidateAndNormalize(lowercase)
 	if err != nil {
 		fmt.Printf("Normalization failed: %v\n", err)

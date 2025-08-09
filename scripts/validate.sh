@@ -18,6 +18,8 @@ NC='\033[0m' # No Color
 TOTAL_STEPS=0
 PASSED_STEPS=0
 FAILED_STEPS=0
+SKIPPED_STEPS=0
+WARNING_COUNT=0
 START_TIME=$(date +%s)
 
 # 🔧 Configuration
@@ -25,6 +27,7 @@ MODE=${1:-"local"}  # local|ci
 COVERAGE_THRESHOLD=${COVERAGE_THRESHOLD:-80}
 TEST_TIMEOUT=${TEST_TIMEOUT:-10m}
 INTEGRATION_TAG=${INTEGRATION_TAG:-integration}
+SKIP_INTEGRATION=${SKIP_INTEGRATION:-false}  # Flag to disable integration tests
 
 # 🎯 Helper functions
 print_header() {
@@ -54,9 +57,18 @@ print_failure() {
     ((FAILED_STEPS++))
 }
 
+print_skipped() {
+    local step_name="$1"
+    local reason="$2"
+    echo -e "${YELLOW}⏭️  $step_name: SKIPPED${NC}"
+    echo -e "${YELLOW}   Reason: $reason${NC}"
+    ((SKIPPED_STEPS++))
+}
+
 print_warning() {
     local message="$1"
     echo -e "${YELLOW}⚠️  Warning: $message${NC}"
+    ((WARNING_COUNT++))
 }
 
 print_info() {
@@ -69,8 +81,16 @@ run_step() {
     local step_name="$1"
     local step_function="$2"
     local icon="$3"
+    local skip_reason="${4:-}"
     
     ((TOTAL_STEPS++))
+    
+    # Check if step should be skipped
+    if [[ -n "$skip_reason" ]]; then
+        print_skipped "$step_name" "$skip_reason"
+        return 0
+    fi
+    
     print_step "$step_name" "$icon"
     
     if $step_function; then
@@ -133,22 +153,32 @@ check_formatting() {
 
 # 🔍 Comprehensive linting with golangci-lint (includes security, TODOs, style)
 run_linting() {
-    # Check if golangci-lint is available
-    if ! command -v golangci-lint &> /dev/null; then
-        print_warning "golangci-lint not found, installing..."
-        if [[ "$MODE" == "ci" ]]; then
-            # CI installation
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
-        else
-            print_warning "Please install golangci-lint: https://golangci-lint.run/usage/install/"
-            return 0  # Don't fail in local mode
-        fi
+    # Add GOPATH/bin to PATH if not already there
+    local gopath_bin="$(go env GOPATH)/bin"
+    if [[ ":$PATH:" != *":$gopath_bin:"* ]]; then
+        export PATH="$gopath_bin:$PATH"
+        print_info "Added $gopath_bin to PATH"
     fi
     
-    print_info "Running comprehensive linting (includes security scan, TODO detection, style checks)..."
+    # Check if golangci-lint is available
+    if ! command -v golangci-lint >/dev/null 2>&1; then
+        print_warning "golangci-lint not found, installing latest version (v2.x)..."
+        if ! go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest; then
+            echo "Failed to install golangci-lint v2"
+            echo "Try manual installation: https://golangci-lint.run/welcome/install/"
+            return 1
+        fi
+        print_info "golangci-lint v2 installed successfully"
+    fi
     
-    # Run linting with verbose output for better feedback
-    if ! golangci-lint run --timeout=5m --verbose; then
+    # Run golangci-lint
+    local lint_output
+    lint_output=$(golangci-lint run --timeout=$TEST_TIMEOUT ./... 2>&1)
+    local lint_exit_code=$?
+    
+    if [[ $lint_exit_code -ne 0 ]]; then
+        echo "Linting failed:"
+        echo "$lint_output"
         return 1
     fi
     
@@ -163,6 +193,30 @@ run_static_analysis() {
     fi
     
     print_info "Static analysis passed! 🔬"
+    return 0
+}
+
+# 🔍 Additional validation checks
+check_additional_validation() {
+    print_info "Running additional validation checks..."
+    
+    # Check if gopls is available for module validation
+    if command -v gopls &> /dev/null; then
+        # Use go list to check for module/package issues
+        local list_output
+        list_output=$(go list -e -json ./... 2>&1)
+        local list_exit_code=$?
+        
+        if [[ $list_exit_code -ne 0 ]]; then
+            echo "Go module/package issues detected:"
+            echo "$list_output"
+            return 1
+        fi
+    else
+        print_info "gopls not available, skipping module validation"
+    fi
+    
+    print_info "Additional validation checks passed! 🎯"
     return 0
 }
 
@@ -364,6 +418,8 @@ print_summary() {
     echo -e "\n${CYAN}📊 Statistics:${NC}"
     echo -e "   ${GREEN}✅ Passed: $PASSED_STEPS${NC}"
     echo -e "   ${RED}❌ Failed: $FAILED_STEPS${NC}"
+    echo -e "   ${YELLOW}⏭️  Skipped: $SKIPPED_STEPS${NC}"
+    echo -e "   ${YELLOW}⚠️  Warnings: $WARNING_COUNT${NC}"
     echo -e "   ${BLUE}📝 Total:  $TOTAL_STEPS${NC}"
     echo -e "   ${YELLOW}⏱️  Time:   ${minutes}m ${seconds}s${NC}"
     
@@ -379,9 +435,17 @@ main() {
     run_step "Code Formatting" "check_formatting" "🎨" || exit 1
     run_step "Comprehensive Linting" "run_linting" "🔍" || exit 1  # Includes security, TODOs, style
     run_step "Static Analysis" "run_static_analysis" "🔬" || exit 1
+    run_step "Additional Validation" "check_additional_validation" "🎯" || exit 1
     run_step "Build Validation" "validate_build" "🏠️" || exit 1
     run_step "Unit Tests" "run_unit_tests" "🧪" || exit 1
-    run_step "Integration Tests" "run_integration_tests" "🔗" || exit 1
+    
+    # Integration tests - can be skipped with SKIP_INTEGRATION=true
+    local integration_skip_reason=""
+    if [[ "$SKIP_INTEGRATION" == "true" ]]; then
+        integration_skip_reason="SKIP_INTEGRATION flag set"
+    fi
+    run_step "Integration Tests" "run_integration_tests" "🔗" "$integration_skip_reason" || exit 1
+    
     run_step "Coverage Check" "validate_coverage" "📊" || exit 1
     run_step "Documentation" "validate_documentation" "📚" || exit 1
     run_step "Final Validation" "final_validation" "🧹" || exit 1

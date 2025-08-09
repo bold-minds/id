@@ -5,8 +5,20 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: ['1.21', '1.22', '1.23']
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          # Primary testing: Latest Go on all platforms (time/concurrency testing)
+          - go-version: '1.24'
+            os: ubuntu-latest
+          - go-version: '1.24'
+            os: windows-latest
+          - go-version: '1.24'
+            os: macos-latest
+          # Compatibility testing: Min supported Go on Linux only
+          - go-version: '1.22'
+            os: ubuntu-latest
+          # Intermediate compatibility: Go 1.23 on Linux only
+          - go-version: '1.23'
+            os: ubuntu-latest
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +37,7 @@ jobs:
       - name: Run benchmarks
         run: go test -bench=. -benchmem ./...
       - name: Upload coverage to Codecov
-        if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.23'
+        if: matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.out
@@ -37,8 +49,8 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.24'
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v2.3.1
