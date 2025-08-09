@@ -136,21 +136,6 @@ check_environment() {
     return 0
 }
 
-# 🎨 Code formatting check
-check_formatting() {
-    local fmt_output
-    fmt_output=$(go fmt ./... 2>&1)
-    
-    if [[ -n "$fmt_output" ]]; then
-        echo "Code formatting issues found:"
-        echo "$fmt_output"
-        return 1
-    fi
-    
-    print_info "Code is properly formatted! 💅"
-    return 0
-}
-
 # 🔍 Comprehensive linting with golangci-lint (includes security, TODOs, style)
 run_linting() {
     # Add GOPATH/bin to PATH if not already there
@@ -183,47 +168,6 @@ run_linting() {
     fi
     
     print_info "Code passes all lint checks (security, TODOs, style, and more)! 🧹"
-    return 0
-}
-
-# 🔧 Static analysis with go vet
-run_static_analysis() {
-    if ! go vet ./...; then
-        return 1
-    fi
-    
-    print_info "Static analysis passed! 🔬"
-    return 0
-}
-
-# 🔍 Additional validation checks
-check_additional_validation() {
-    print_info "Running additional validation checks..."
-    
-    # Check if gopls is available for module validation
-    if command -v gopls &> /dev/null; then
-        # Use go list to check for module/package issues
-        local list_output
-        list_output=$(go list -e -json ./... 2>&1)
-        local list_exit_code=$?
-        
-        if [[ $list_exit_code -ne 0 ]]; then
-            echo "Go module/package issues detected:"
-            echo "$list_output"
-            return 1
-        fi
-    else
-        print_info "gopls not available, skipping module validation"
-    fi
-    
-    print_info "Additional validation checks passed! 🎯"
-    return 0
-}
-
-# 🔒 Security scanning (handled by golangci-lint gosec linter)
-# This function is now redundant since golangci-lint includes gosec
-run_security_scan() {
-    print_info "Security scanning is handled by golangci-lint (gosec linter) 🔒"
     return 0
 }
 
@@ -430,12 +374,9 @@ print_summary() {
 main() {
     print_header
     
-    # Core validation steps (optimized to leverage golangci-lint)
+    # Core validation steps (streamlined - no overlap with golangci-lint)
     run_step "Environment Check" "check_environment" "🔍" || exit 1
-    run_step "Code Formatting" "check_formatting" "🎨" || exit 1
-    run_step "Comprehensive Linting" "run_linting" "🔍" || exit 1  # Includes security, TODOs, style
-    run_step "Static Analysis" "run_static_analysis" "🔬" || exit 1
-    run_step "Additional Validation" "check_additional_validation" "🎯" || exit 1
+    run_step "Comprehensive Linting" "run_linting" "🔍" || exit 1  # golangci-lint handles: formatting, static analysis, security, style
     run_step "Build Validation" "validate_build" "🏠️" || exit 1
     run_step "Unit Tests" "run_unit_tests" "🧪" || exit 1
     

@@ -28,6 +28,15 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - name: Install dependencies
         run: go mod download
+      
+      # Build validation (cross-platform)
+      - name: Build validation
+        run: |
+          go build ./...
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+      
+      # Unit tests with race detection
       - name: Run tests (Unix)
         if: runner.os != 'Windows'
         run: go test -v -race -coverprofile=coverage.out ./...
