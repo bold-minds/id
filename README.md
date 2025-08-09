@@ -1,11 +1,11 @@
 # Advanced ULID Library for Go
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Go Version](https://img.shields.io/endpoint?url=https://bold-minds.github.io/id/badges/go-version.json)](https://pkg.go.dev/github.com/bold-minds/id)
+[![Go Version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/go-version.json)](https://pkg.go.dev/github.com/bold-minds/id)
 [![Latest Release](https://img.shields.io/github/v/release/bold-minds/id?logo=github)](https://github.com/bold-minds/id/releases)
-[![Last Updated](https://img.shields.io/endpoint?url=https://bold-minds.github.io/id/badges/last-updated.json)](https://github.com/bold-minds/id/commits)
-[![golangci-lint](https://img.shields.io/endpoint?url=https://bold-minds.github.io/id/badges/golangci-lint.json)](https://github.com/bold-minds/id/actions)
-[![Coverage](https://img.shields.io/endpoint?url=https://bold-minds.github.io/id/badges/coverage.json)](https://github.com/bold-minds/id/actions)
+[![Last Updated](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/last-updated.json)](https://github.com/bold-minds/id/commits)
+[![golangci-lint](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/golangci-lint.json)](https://github.com/bold-minds/id/actions)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/coverage.json)](https://github.com/bold-minds/id/actions)
 [![Dependabot](https://img.shields.io/github/dependabot/bold-minds/id?logo=dependabot)](https://github.com/bold-minds/id/security/dependabot)
 [![Go Reference](https://pkg.go.dev/badge/github.com/bold-minds/id.svg)](https://pkg.go.dev/github.com/bold-minds/id)
 

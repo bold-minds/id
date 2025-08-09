@@ -91,30 +91,20 @@ jobs:
             echo '{"schemaVersion":1,"label":"golangci-lint","message":"'$ISSUES' issues","color":"red"}' > .github/badges/golangci-lint.json
           fi
           
-      - name: Deploy badges to GitHub Pages
+      - name: Commit badges to main branch
         if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
         run: |
-          # Create gh-pages branch if it doesn't exist
+          # Configure git
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Clone the repository to a temporary directory
-          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/bold-minds/id.git temp-pages
-          cd temp-pages
+          # Add badge files to git
+          git add .github/badges/
           
-          # Create or switch to gh-pages branch
-          git checkout gh-pages 2>/dev/null || git checkout --orphan gh-pages
-          
-          # Clear existing content and copy badge files
-          rm -rf badges
-          mkdir -p badges
-          cp ../.github/badges/* badges/
-          
-          # Commit and push
-          git add badges/
-          git commit -m "Update badges from CI run ${{ github.run_number }}" || exit 0
-          git push origin gh-pages
-          
-          # Cleanup
-          cd ..
-          rm -rf temp-pages
+          # Commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No badge changes to commit"
+          else
+            git commit -m "Update badges from CI run ${{ github.run_number }} [skip ci]"
+            git push origin main
+          fi
