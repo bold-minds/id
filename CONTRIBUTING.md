@@ -1,201 +1,262 @@
-# Contributing to Advanced ULID Library
+# Contributing to ex
 
-We love your input! We want to make contributing to this project as easy and transparent as possible, whether it's:
+Thank you for your interest in contributing to the `ex` Go exception library! 🎉
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
-- Becoming a maintainer
+We welcome contributions that help improve the library while maintaining its focus on simplicity, performance, and Go idioms.
 
-## 🚀 Development Process
+## 🚀 Getting Started
 
-We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
+### Prerequisites
 
-### Pull Requests
+- **Go 1.19+** - Required for development
+- **Git** - For version control
+- **golangci-lint** (optional) - For comprehensive linting
 
-1. Fork the repo and create your branch from `main`.
-2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. Issue that pull request!
+### Development Setup
 
-## 🧪 Testing
+1. **Fork and clone the repository**:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/ex.git
+   cd ex
+   ```
 
-We maintain high test coverage and all contributions should include appropriate tests.
+2. **Run the validation pipeline**:
+   ```bash
+   ./scripts/validate.sh
+   ```
 
+## 🎯 What We're Looking For
+
+We welcome contributions in these areas:
+
+### ✅ **Encouraged Contributions**
+- **Bug fixes** - Fix issues or edge cases
+- **Performance improvements** - Optimize without breaking compatibility
+- **Test enhancements** - Add test cases, improve coverage
+- **Documentation improvements** - Clarify usage, add examples
+- **Validation pipeline improvements** - Enhance CI/CD and tooling
+
+### ⚠️ **Requires Discussion**
+- **New error types** - Additional `ExType` constants
+- **API changes** - Modifications to public interfaces
+- **New dependencies** - Adding external packages
+- **Breaking changes** - Changes that affect backward compatibility
+
+### ❌ **Not Accepted**
+- **Feature creep** - Complex features that don't align with Go idioms
+- **Non-idiomatic Go** - Code that doesn't follow Go conventions
+- **Performance regressions** - Changes that significantly slow down the library
+
+## 📋 Contribution Process
+
+### 1. **Create an Issue First**
+For significant changes, please create an issue to discuss:
+- What problem you're solving
+- Your proposed approach
+- Any potential breaking changes
+
+### 2. **Development Workflow**
+
+1. **Create a feature branch**:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes**:
+   - Follow the code style guidelines below
+   - Add tests for new functionality
+   - Update documentation as needed
+
+3. **Validate your changes**:
+   ```bash
+   # Run the full validation pipeline
+   ./scripts/validate.sh
+   
+   # Or run individual checks
+   go fmt ./...
+   go vet ./...
+   go test -race ./...
+   ```
+
+4. **Commit your changes**:
+   ```bash
+   git add .
+   git commit -m "feat: add your feature description"
+   ```
+
+5. **Push and create a pull request**:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+
+### 3. **Pull Request Guidelines**
+
+Your PR should:
+- **Have a clear title** describing the change
+- **Reference any related issues** using `Fixes #123` or `Closes #123`
+- **Include tests** for new functionality
+- **Pass all validation checks** (CI will verify this)
+- **Maintain backward compatibility** unless discussed otherwise
+
+## 🎨 Code Style Guidelines
+
+### Go Conventions
+- Follow standard Go formatting (`go fmt`)
+- Use meaningful variable and function names
+- Write clear, concise comments for public APIs
+- Follow Go's error handling patterns
+
+### Testing Standards
+- Write table-driven tests where appropriate
+- Test both success and error cases
+- Include edge cases (nil values, empty strings, etc.)
+- Use `testify/assert` for assertions (already included)
+
+### Example Test Structure
+```go
+func TestNewException(t *testing.T) {
+    tests := []struct {
+        name     string
+        code     ex.ExType
+        id       int
+        message  string
+        expected string
+    }{
+        {
+            name:     "basic exception",
+            code:     ex.ExTypeIncorrectData,
+            id:       400,
+            message:  "test message",
+            expected: "test message",
+        },
+        // ... more test cases
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            exc := ex.New(tt.code, tt.id, tt.message)
+            assert.Equal(t, tt.expected, exc.Error())
+        })
+    }
+}
+```
+
+### Documentation Standards
+- Document all public functions and types
+- Include usage examples in docstrings
+- Use clear, concise language
+- Follow Go's documentation conventions
+
+## 🧪 Testing Requirements
+
+### Test Coverage
+- All new code must have tests
+- Aim for high test coverage (we use 80% as minimum)
+- Include both unit and integration tests
+
+### Test Types
+1. **Unit Tests** - Test individual functions and methods
+2. **Integration Tests** - Test `errors.Is` and `errors.As` compatibility
+3. **Edge Case Tests** - Test boundary conditions and error cases
+4. **Race Tests** - Ensure thread safety (`go test -race`)
+
+### Running Tests
 ```bash
 # Run all tests
-go test -v ./...
+go test ./...
 
-# Run tests with race detection
+# Run with coverage
+go test -cover ./...
+
+# Run with race detection
 go test -race ./...
 
-# Run benchmarks
-go test -bench=. ./...
-
-# Check test coverage
-go test -cover ./...
+# Run specific test
+go test -run TestNewException
 ```
 
-## 📝 Code Style
+## 🔍 Code Review Process
 
-We follow standard Go conventions:
+### What We Look For
+- **Correctness** - Does the code work as intended?
+- **Performance** - Does it maintain or improve performance?
+- **Style** - Does it follow Go conventions?
+- **Tests** - Are there adequate tests?
+- **Documentation** - Is it properly documented?
+- **Compatibility** - Does it maintain backward compatibility?
 
-- Use `gofmt` to format your code
-- Use `golint` and `go vet` to catch common issues
-- Follow effective Go guidelines
-- Write clear, self-documenting code
-- Add comments for exported functions and types
+### Review Timeline
+- Initial review within 2-3 business days
+- Follow-up reviews within 1-2 business days
+- Merge after approval and passing CI
 
-### Code Organization
+## 🚨 Reporting Issues
 
-- Keep functions focused and small
-- Use meaningful variable and function names
-- Group related functionality together
-- Maintain consistent error handling patterns
+### Bug Reports
+When reporting bugs, please include:
+- **Go version** (`go version`)
+- **Library version** or commit hash
+- **Minimal reproduction case**
+- **Expected vs actual behavior**
+- **Error messages** (if any)
 
-## 🐛 Bug Reports
+### Feature Requests
+For feature requests, please describe:
+- **Use case** - What problem does it solve?
+- **Proposed API** - How would it work?
+- **Alternatives considered** - Other approaches you've thought of
+- **Backward compatibility** - Any breaking changes?
 
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/bold-minds/id/issues/new).
-
-**Great Bug Reports** tend to have:
-
-- A quick summary and/or background
-- Steps to reproduce
-  - Be specific!
-  - Give sample code if you can
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
-
-### Bug Report Template
-
-```markdown
-**Describe the bug**
-A clear and concise description of what the bug is.
-
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
-
-**Code Sample**
-```go
-// Minimal code sample that reproduces the issue
-```
-
-**Environment:**
-- Go version: [e.g. 1.21]
-- OS: [e.g. macOS, Linux, Windows]
-- Library version: [e.g. v1.0.0]
-
-**Additional context**
-Add any other context about the problem here.
-```
-
-## 💡 Feature Requests
-
-We welcome feature requests! Please provide:
-
-- **Use case**: Describe the problem you're trying to solve
-- **Proposed solution**: How you envision the feature working
-- **Alternatives considered**: Other approaches you've thought about
-- **Additional context**: Any other relevant information
-
-## 🏗️ Development Setup
-
-1. **Prerequisites**
-   ```bash
-   # Go 1.21 or later
-   go version
-   ```
-
-2. **Clone and setup**
-   ```bash
-   git clone https://github.com/bold-minds/id.git
-   cd id
-   go mod download
-   ```
-
-3. **Run tests**
-   ```bash
-   go test -v ./...
-   ```
-
-4. **Run benchmarks**
-   ```bash
-   go test -bench=. ./...
-   ```
-
-## 📋 Commit Guidelines
+## 📝 Commit Message Guidelines
 
 We follow conventional commits for clear history:
 
-- `feat:` new feature
-- `fix:` bug fix
-- `docs:` documentation changes
-- `test:` adding or updating tests
-- `refactor:` code refactoring
-- `perf:` performance improvements
-- `chore:` maintenance tasks
+```
+type(scope): description
+
+[optional body]
+
+[optional footer]
+```
+
+### Types
+- `feat:` - New features
+- `fix:` - Bug fixes
+- `docs:` - Documentation changes
+- `test:` - Test additions or changes
+- `refactor:` - Code refactoring
+- `perf:` - Performance improvements
+- `chore:` - Maintenance tasks
 
 ### Examples
-
 ```
-feat: add batch generation with custom time ranges
-fix: resolve race condition in entropy generation
-docs: update README with new API examples
-test: add comprehensive validation tests
-perf: optimize string conversion allocations
+feat: add ExType.String() method for debugging
+
+fix: handle nil inner errors correctly in Unwrap()
+
+docs: add error chaining examples to README
+
+test: add edge cases for WithInnerError method
 ```
-
-## 🔄 Release Process
-
-Releases follow semantic versioning (SemVer):
-
-- **MAJOR**: incompatible API changes
-- **MINOR**: backwards-compatible functionality additions
-- **PATCH**: backwards-compatible bug fixes
-
-## 🤝 Code of Conduct
-
-### Our Pledge
-
-We pledge to make participation in our project a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
-
-### Our Standards
-
-**Positive behavior includes:**
-- Using welcoming and inclusive language
-- Being respectful of differing viewpoints and experiences
-- Gracefully accepting constructive criticism
-- Focusing on what is best for the community
-- Showing empathy towards other community members
-
-**Unacceptable behavior includes:**
-- Trolling, insulting/derogatory comments, and personal attacks
-- Public or private harassment
-- Publishing others' private information without explicit permission
-- Other conduct which could reasonably be considered inappropriate
-
-## 📞 Getting Help
-
-- **Documentation**: Check the README and code comments
-- **Issues**: Search existing issues before creating new ones
-- **Discussions**: Use GitHub Discussions for questions and ideas
 
 ## 🏆 Recognition
 
-Contributors will be recognized in:
-- The project's README
-- Release notes for significant contributions
-- Special thanks in documentation
+Contributors will be:
+- Listed in release notes for their contributions
+- Mentioned in the README contributors section
+- Given credit in commit messages and PR descriptions
 
-Thank you for contributing! 🎉
+## 📞 Getting Help
+
+If you need help or have questions:
+- **Create an issue** for bugs or feature discussions
+- **Check existing issues** to see if your question has been answered
+- **Review the README.md** for usage examples and API documentation
+
+## 📄 License
+
+By contributing to this project, you agree that your contributions will be licensed under the same MIT License that covers the project.
+
+---
+
+Thank you for helping make `ex` better! 🙏

@@ -2,96 +2,46 @@
 
 ## Supported Versions
 
-We actively support the following versions with security updates:
+We release patches for security vulnerabilities. Which versions are eligible for receiving such patches depends on the CVSS v3.0 Rating:
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
+| 1.0.x   | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
-We take security vulnerabilities seriously. If you discover a security vulnerability, please follow these steps:
+The `ex` team and community take security bugs seriously. We appreciate your efforts to responsibly disclose your findings, and will make every effort to acknowledge your contributions.
 
-### 1. **Do Not** Create a Public Issue
+To report a security issue, please use the GitHub Security Advisory ["Report a Vulnerability"](https://github.com/bold-minds/ex/security/advisories/new) tab.
 
-Please do not report security vulnerabilities through public GitHub issues, discussions, or pull requests.
+The `ex` team will send a response indicating the next steps in handling your report. After the initial reply to your report, the security team will keep you informed of the progress towards a fix and full announcement, and may ask for additional information or guidance.
 
-### 2. Report Privately
+### What to include in your report
 
-Send an email to **security@bold-minds.com** with the following information:
+Please include the following information along with your report:
 
-- **Subject**: Security Vulnerability in bold-minds/id
-- **Description**: Detailed description of the vulnerability
-- **Steps to Reproduce**: Clear steps to reproduce the issue
-- **Impact**: Potential impact and severity assessment
-- **Suggested Fix**: If you have ideas for a fix (optional)
+- Type of issue (e.g. buffer overflow, SQL injection, cross-site scripting, etc.)
+- Full paths of source file(s) related to the manifestation of the issue
+- The location of the affected source code (tag/branch/commit or direct URL)
+- Any special configuration required to reproduce the issue
+- Step-by-step instructions to reproduce the issue
+- Proof-of-concept or exploit code (if possible)
+- Impact of the issue, including how an attacker might exploit the issue
 
-### 3. Response Timeline
+This information will help us triage your report more quickly.
 
-- **Initial Response**: Within 48 hours
-- **Status Update**: Within 7 days
-- **Resolution**: Varies based on complexity, typically within 30 days
+## Preferred Languages
 
-### 4. Disclosure Process
+We prefer all communications to be in English.
 
-1. We will acknowledge receipt of your vulnerability report
-2. We will investigate and validate the vulnerability
-3. We will develop and test a fix
-4. We will coordinate disclosure timing with you
-5. We will release a security update
-6. We will publicly acknowledge your responsible disclosure (if desired)
+## Policy
 
-## Security Considerations
+- We will respond to your report within 72 hours with our evaluation of the report and an expected resolution date.
+- If you have followed the instructions above, we will not take any legal action against you in regard to the report.
+- We will handle your report with strict confidentiality, and not pass on your personal details to third parties without your permission.
+- We will keep you informed of the progress towards resolving the problem.
+- In the public disclosure, we will give your name as the discoverer of the problem (unless you desire otherwise).
 
-### Entropy Sources
+## Comments on this Policy
 
-This library provides multiple entropy source options:
-
-- **Default**: Uses `math/rand` with time-based seeding (suitable for most applications)
-- **Secure**: Uses `crypto/rand` for cryptographically secure randomness
-- **Custom**: Allows you to provide your own entropy source
-
-For security-sensitive applications, always use `NewSecureGenerator()`:
-
-```go
-// For security-sensitive applications
-gen := id.NewSecureGenerator()
-```
-
-### ULID Properties
-
-ULIDs have the following security-relevant properties:
-
-- **Predictable Timestamp**: The first 48 bits encode timestamp in milliseconds
-- **Random Component**: The remaining 80 bits are random (when using appropriate entropy)
-- **Not Cryptographically Secure**: ULIDs are not designed to be cryptographically secure identifiers
-
-### Best Practices
-
-1. **Use Secure Generation**: For sensitive applications, use `NewSecureGenerator()`
-2. **Validate Input**: Always validate ULIDs from external sources using `IsIdValid()`
-3. **Handle Errors**: Properly handle all error returns from library functions
-4. **Avoid Timing Attacks**: Be aware that timestamp extraction reveals creation time
-5. **Rate Limiting**: Consider rate limiting ULID generation in public APIs
-
-### Known Limitations
-
-- ULIDs reveal approximate creation time
-- Monotonic ordering within the same millisecond depends on entropy source
-- Not suitable as cryptographic tokens or passwords
-- Should not be used for security-critical random number generation
-
-## Security Updates
-
-Security updates will be:
-
-- Released as patch versions (e.g., 1.0.1)
-- Documented in the CHANGELOG.md
-- Announced through GitHub releases
-- Tagged with security labels
-
-## Acknowledgments
-
-We appreciate responsible disclosure and will acknowledge security researchers who help improve the security of this project.
-
-Thank you for helping keep our project and users safe!
+If you have suggestions on how this process could be improved please submit a pull request.
