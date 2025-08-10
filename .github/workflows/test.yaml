@@ -32,6 +32,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -56,11 +58,20 @@ jobs:
       - name: Run benchmarks
         run: go test -bench=. -benchmem ./...
       
+      # Generate GitHub App token for badge automation
+      - name: Generate GitHub App token
+        if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.BADGE_BOT_APP_ID }}
+          private-key: ${{ secrets.BADGE_BOT_PRIVATE_KEY }}
+
       # Generate badge data from CI metrics (only from primary job)
       - name: Generate badge data
         if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           mkdir -p .github/badges
           
@@ -137,10 +148,15 @@ jobs:
           
       - name: Commit badges to main branch
         if: github.ref == 'refs/heads/main' && matrix.os == 'ubuntu-latest' && matrix.go-version == '1.24'
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          # Configure git
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          # Configure git with GitHub App identity and authentication
+          git config --global user.name "Badge Automation Bot"
+          git config --global user.email "action@github.com"
+          
+          # Configure git to use the GitHub App token for authentication
+          git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
           
           # Add badge files to git
           git add .github/badges/
@@ -149,6 +165,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No badge changes to commit"
           else
-            git commit -m "Update badges from CI run ${{ github.run_number }} [skip ci]"
-            git push origin main
+            git commit -m "chore: update badges from CI run ${{ github.run_number }} [skip ci]"
+            git push origin HEAD:main
           fi
