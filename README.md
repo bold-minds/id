@@ -242,4 +242,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - [oklog/ulid](https://github.com/oklog/ulid) - Basic ULID implementation
 - [ULID Specification](https://github.com/ulid/spec) - Official specification
-- [RobThree/NUlid](https://github.com/RobThree/NUlid) - .NET implementation with optimizations
+- [RobThree/NUlid](https://github.com/RobThree/NUlid) - .NET implementation with optimizations# Test badge automation
