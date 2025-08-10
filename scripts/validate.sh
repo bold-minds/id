@@ -147,13 +147,14 @@ run_linting() {
     
     # Check if golangci-lint is available
     if ! command -v golangci-lint >/dev/null 2>&1; then
-        print_warning "golangci-lint not found, installing latest version (v2.x)..."
-        if ! go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest; then
-            echo "Failed to install golangci-lint v2"
+        print_warning "golangci-lint not found, installing latest version..."
+        # Use the recommended installation method for latest version
+        if ! go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; then
+            echo "Failed to install golangci-lint"
             echo "Try manual installation: https://golangci-lint.run/welcome/install/"
             return 1
         fi
-        print_info "golangci-lint v2 installed successfully"
+        print_info "golangci-lint installed successfully"
     fi
     
     # Run golangci-lint
