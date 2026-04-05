@@ -1,12 +1,9 @@
 # Advanced ULID Library for Go
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Go Version](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/go-version.json)](https://golang.org/doc/go1.24)
-[![Latest Release](https://img.shields.io/github/v/release/bold-minds/id?logo=github&color=blueviolet)](https://github.com/bold-minds/id/releases)
-[![Last Updated](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/last-updated.json)](https://github.com/bold-minds/id/commits)
-[![golangci-lint](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/golangci-lint.json)](https://github.com/bold-minds/id/actions/workflows/test.yaml)
-[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/coverage.json)](https://github.com/bold-minds/id/actions/workflows/test.yaml)
-[![Dependabot](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/bold-minds/id/main/.github/badges/dependabot.json)](https://github.com/bold-minds/id/security/dependabot)
+[![Go Reference](https://pkg.go.dev/badge/github.com/bold-minds/id.svg)](https://pkg.go.dev/github.com/bold-minds/id)
+[![Build](https://img.shields.io/github/actions/workflow/status/bold-minds/id/test.yaml?branch=main&label=tests)](https://github.com/bold-minds/id/actions/workflows/test.yaml)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/bold-minds/id)](go.mod)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/clairevnext/4ed380fc0403f897f94ee341fca14cc9/raw/coverage.json)](https://github.com/bold-minds/id/actions/workflows/test.yaml)
 
 A comprehensive, high-performance ULID (Universally Unique Lexicographically Sortable Identifier) library for Go that extends beyond basic generation with advanced features for production applications.
 
