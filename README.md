@@ -3,7 +3,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/bold-minds/id.svg)](https://pkg.go.dev/github.com/bold-minds/id)
 [![Build](https://img.shields.io/github/actions/workflow/status/bold-minds/id/test.yaml?branch=main&label=tests)](https://github.com/bold-minds/id/actions/workflows/test.yaml)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/bold-minds/id)](go.mod)
-[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/clairevnext/4ed380fc0403f897f94ee341fca14cc9/raw/coverage.json)](https://github.com/bold-minds/id/actions/workflows/test.yaml)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/bold-admin/1f12b39915233c9ba15441c2aabcf15b/raw/coverage.json)](https://github.com/bold-minds/id/actions/workflows/test.yaml)
 
 A comprehensive, high-performance ULID (Universally Unique Lexicographically Sortable Identifier) library for Go that extends beyond basic generation with advanced features for production applications.
 
